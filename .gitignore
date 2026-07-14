@@ -1,0 +1,10 @@
+*.o
+superc
+superc.exe
+__pycache__/
+*.pyc
+.DS_Store
+*.dSYM/
+build/
+dist/
+*.egg-info/
