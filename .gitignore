@@ -8,3 +8,6 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+GLM-5.2-colibri-int4-with-int8-mtp/
+*.bin
+*.safetensors

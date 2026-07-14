@@ -1,23 +1,14 @@
-Colibri Engine Attribution
-===========================
+Sawyer SuperC uses three open projects:
 
-The local inference engine in Sawyer SuperC is derived from Colibri
-(https://github.com/JustVugg/colibri) by Vincenzo / JustVugg.
+1. **Colibri** by Vincenzo/JustVugg (Apache 2.0) -- The local inference engine.
+   Colibri proved that a 744B MoE model can run on consumer hardware by streaming
+   experts from disk. The C kernel code in c/colibri/ is derived from Colibri.
+   https://github.com/JustVugg/colibri
 
-Original license: Apache License 2.0
-https://github.com/JustVugg/colibri/blob/main/LICENSE
+2. **GLM-5.2** by Z.ai (open weights) -- The model itself.
+   GLM-5.2 is a 744-billion-parameter Mixture-of-Experts model with 21,504
+   routed experts. Its open availability makes this entire project possible.
+   https://z.ai/
 
-Key components derived from Colibri:
-- c/glm.c: GLM-5.2 MoE forward pass, MLA attention, DSA sparse attention
-- int8/int4 integer-dot kernels (AVX2 maddubs)
-- MTP speculative decoding (int8 draft head)
-- Expert streaming from disk with per-layer LRU cache
-- MLA weight absorption for decode
-- KV-cache persistence
-- Grammar-forced speculative drafts
-- Byte-level BPE tokenizer
-
-Colibri is used under the Apache 2.0 License with gratitude.
-The Colibri project proved that a 744B MoE model can run on consumer
-hardware by streaming experts from disk -- the foundational insight
-that makes SuperC possible.
+3. **Sawyer** by InFill Systems, LLC (Apache 2.0) -- Network routing and token economics.
+   https://github.com/drc10101/sawyer-network

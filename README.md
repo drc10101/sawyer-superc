@@ -192,6 +192,8 @@ Works with: Hermes, OpenClaw, Claude Code, Cursor, Continue, Aider, Cline, LangC
 
 The local inference engine is based on [Colibri](https://github.com/JustVugg/colibri) by Vincenzo/JustVugg, used under the [Apache 2.0 License](LICENSE-COLIBRI). Colibri proved that a 744B MoE model can run on consumer hardware. We're grateful for that work.
 
+The GLM-5.2 model weights are provided by [Z.ai](https://z.ai/) under open weights. GLM-5.2 is a 744-billion-parameter Mixture-of-Experts model with 21,504 routed experts, and its open availability makes this entire project possible.
+
 The network routing, token economics, and provider layer are from [Sawyer](https://github.com/drc10101/sawyer-network) by InFill Systems, LLC.
 
 ---
