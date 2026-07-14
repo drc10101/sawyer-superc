@@ -4,36 +4,50 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-**Native MoE inference. Single binary. Zero deps.**
+**8GB of RAM. A 744-billion-parameter model. For real.**
 
-Sawyer SuperC is the C-powered upgrade to [Sawyer](https://github.com/drc10101/sawyer-network). Same network, same router, same token economics -- but the local inference engine runs in pure C with int8/int4 kernels, MLA weight absorption, MTP speculative decoding, and DSA sparse attention.
+Sawyer SuperC runs the biggest AI models on the weakest hardware by doing what no single machine can do alone -- sharing the load across a network of computers, each one handling just the pieces it can hold.
 
-The engine is based on [Colibri](https://github.com/JustVugg/colibri) by Vincenzo/JustVugg, used under Apache 2.0 with gratitude. What Colibri proved -- that a 744B MoE model can run on a 25GB consumer machine by streaming experts from disk -- SuperC extends to the network. When your local cache is cold, the Sawyer router finds the expert on another node. When you have spare GPU, you serve experts back and earn tokens.
-
-**The deal:** Code is free. Earn tokens by serving inference to the network. Spend tokens by running inference. If you can't afford tokens, earn them.
+You don't need a data center. You don't need a GPU. You need 8GB of RAM and an internet connection.
 
 ---
 
-## Why SuperC
+## The idea in 30 seconds
 
-| | Sawyer (Python) | Sawyer SuperC (C) |
-|---|---|---|
-| Install | `pip install sawyer-core` | Download one binary |
-| Dependencies | Python 3.11+, pip, venv | None |
-| Engine | llama.cpp / vLLM | Colibri-derived C engine |
-| Cold decode | Depends on backend | ~0.05-0.1 tok/s (disk-bound) |
-| Warm decode | Depends on backend | 4+ tok/s (pinned experts) |
-| MTP speculation | No | Yes (2.2-2.8 tok/forward) |
-| Network routing | Yes | Yes |
-| Token earnings | Yes | Yes |
+Big AI models are called "MoE" -- Mixture of Experts. Only a few pieces activate per word you type. The rest sit on disk until they're needed.
 
-SuperC is for people who want native speed and zero setup. Sawyer (Python) is for people who want the Python ecosystem. Both connect to the same network.
+Sawyer SuperC keeps the shared pieces in your RAM (about 9.9 GB at int4). The expert pieces -- 21,504 of them, each about 19 MB -- stream from disk if you have them, or from the network if you don't. Your machine runs the parts it can. Other machines run the parts you can't.
+
+If you have a GPU, you earn tokens by running experts for other people. If you don't have a GPU, you spend tokens to use the network. Either way, it works.
+
+**The deal: code is free. Earn tokens by serving. Spend tokens by chatting. If you can't afford tokens, earn them.**
+
+---
+
+## What it does
+
+```
+Your laptop (8GB RAM)
+  |
+  |--- Runs dense layers locally (9.9 GB int4, fits in RAM)
+  |
+  |--- Needs expert #47? Check local disk cache.
+  |      Got it? Use it.
+  |      Don't got it? Ask the Sawyer network.
+  |                     |
+  |                     +--> Some kid in Mumbai has expert #47
+  |                     +--> A miner in Texas has expert #47
+  |                     +--> They run it, send it back, you see the answer
+  |
+  v
+Answer on your screen.
+```
 
 ---
 
 ## Get Started
 
-Download the binary for your platform:
+Download one file. No Python. No pip. No dependencies.
 
 ```bash
 # Linux
@@ -48,88 +62,89 @@ chmod +x superc
 irm https://github.com/drc10101/sawyer-superc/releases/latest/download/superc-windows-x64.exe -OutFile superc.exe
 ```
 
-Then run:
+Then:
 
 ```bash
-superc chat              # Talk to the model locally
-superc serve             # Start serving experts, earn tokens
-superc run               # Chat + serve at the same time
+superc chat              # Talk to the model
+superc serve             # Start earning tokens with your GPU
+superc run               # Chat + earn at the same time
 ```
 
 ---
 
-## Commands
+## Using the Agent
 
-### Using the Agent
-
-You want to talk to an AI. You don't care about servers.
+You want to talk to an AI. You don't care about how it works.
 
 | Command | What it does |
 |---------|-------------|
-| `superc chat` | Open a chat session. Talk to the model on your machine. |
+| `superc chat` | Talk to the model. Opens a chat in your terminal. |
+| `superc chat --network` | Same thing, but pulls experts from the network when your cache is cold. |
 | `superc chat --model glm-5.2` | Use a specific model. |
-| `superc chat --network` | Chat locally, but fall back to the network for experts you don't have. |
 | `superc models` | Show what models are available. |
-| `superc bench` | Run a speed test on your hardware. |
-
-### Joining the Network
-
-You have a GPU. You want to earn tokens while it sits idle.
-
-| Command | What it does |
-|---------|-------------|
-| `superc serve` | Start serving. Your GPU runs expert models for others. You earn tokens. |
-| `superc serve --model mixtral` | Serve a specific model's experts. |
-| `superc status` | See how many tokens you've served, your uptime, and your earnings. |
-| `superc register` | Sign up this machine as a network node. |
-| `superc register --gpu` | Sign up and tell the network what GPU you have. |
-| `superc download` | Download model files so serving starts faster. |
-| `superc provider onboarding <id>` | Connect your bank so you can get paid. |
-
----
-
-## How It Works
-
-```
-[You]
- |
- v
-[SuperC Engine]  -- Colibri-derived C kernel
- |               -- int8/int4 dot-product kernels
- |               -- MLA weight absorption
- |               -- MTP speculative decoding
- |               -- DSA sparse attention
- |
- +-- Local disk cache (experts you already have)
- |
- +-- Sawyer Router (experts you don't have)
-      |
-      +--> [Node: Expert 3]  (RTX 4090, Dallas)
-      +--> [Node: Expert 7]  (A100, Frankfurt)
-      +--> [Node: Expert 15] (RTX 3060, Tokyo)
-      |
-      v
-[Answer comes back to you]
-```
-
-Your machine runs the dense layers locally (attention, shared experts, embeddings -- about 9.9 GB at int4). The sparse experts -- the 21,504 routed slices that only activate ~8 per token per layer -- come from disk if you have them cached, or from the network if you don't.
-
-When you run `superc serve`, the same engine runs in reverse: your GPU processes expert requests from other users, and you earn tokens for each one you complete.
+| `superc bench` | Run a speed test. See how fast your machine is. |
 
 ---
 
 ## Earning on the Network
 
-| Tier | VRAM | Multiplier | Can Host | Monthly Estimate |
-|------|------|-----------|----------|-------------------|
-| Tier 1 | 4 GB | 1x | Qwen1.5-MoE experts (0.5 GB) | $15-50 |
-| Tier 2 | 8 GB | 2x | + DeepSeek-V2 experts (0.8 GB) | $40-120 |
-| Tier 3 | 12 GB | 3x | + Mixtral experts (1.5 GB) | $80-250 |
-| Tier 4 | 24 GB+ | 4x | All experts | $200-800+ |
+You have a GPU sitting idle. You want to make money with it.
 
-Every quarter, 70% of all subscription revenue goes to providers. The pool is split 90% by throughput (tokens served x tier multiplier) and 10% by uptime. Payouts via Stripe Connect, minimum $10, rollover if below.
+| Command | What it does |
+|---------|-------------|
+| `superc serve` | Start serving. Your GPU runs expert pieces for other people. You earn tokens. |
+| `superc serve --model mixtral` | Serve a specific model's experts. |
+| `superc status` | See how many tokens you've served, your uptime, and your earnings. |
+| `superc register --gpu` | Sign up and tell the network what GPU you have. |
+| `superc download` | Download model files so serving starts faster. |
+| `superc provider onboarding <id>` | Connect your bank so you can get paid. |
 
-A kid with a 1060 can't afford tokens. But they can earn them. That's the point.
+### How much can you earn?
+
+| Your GPU | VRAM | What you can host | What you can earn |
+|----------|------|-------------------|--------------------|
+| GTX 1060 | 4 GB | Small experts | $15-50/month |
+| RTX 3060 | 8 GB | Medium experts | $40-120/month |
+| RTX 4070 | 12 GB | Most experts | $80-250/month |
+| RTX 4090 | 24 GB | All experts | $200-800/month |
+
+70% of all subscription revenue goes to providers. The pool is split 90% by how much you compute, 10% by how long you're online. Payouts every quarter via Stripe. Minimum $10, below that rolls over.
+
+---
+
+## How it works (the simple version)
+
+A 744-billion-parameter model sounds impossible. It's not. Here's why:
+
+The model has 21,504 expert pieces. For every word you type, only about 8 of them activate. That's roughly 19 MB of expert data per word -- your SSD can handle that.
+
+But if your SSD is slow, or you don't have the expert at all, the Sawyer network finds someone who does. Your laptop runs the shared part. The network runs the specialist part. You get the answer.
+
+No single computer needs to hold the whole model. That's the point.
+
+---
+
+## How it works (the technical version)
+
+- **Engine:** Based on [Colibri](https://github.com/JustVugg/colibri) by Vincenzo/JustVugg (Apache 2.0). Pure C, zero dependencies, int8/int4 integer-dot kernels with AVX2, MLA weight absorption, DSA sparse attention.
+- **MTP speculative decoding:** Drafts 2-3 tokens per forward pass. Needs int8 draft head (int4 gives 0% acceptance -- use the int8 model files).
+- **Expert streaming:** 21,504 experts live on disk (~370 GB total). Per-layer LRU cache keeps the hot ones in RAM. Cold ones stream from disk, or from the Sawyer network if you're connected.
+- **Network routing:** When your local cache misses, the Sawyer router finds the nearest node that has that expert. Latency target: under 100ms for a network expert fetch.
+- **Token economics:** Same as Sawyer. 70% of revenue to providers. 4 hardware tiers. Quarterly payouts.
+- **KV cache:** Compressed MLA format, 576 floats/token instead of 32,768. Persists across sessions so conversations reopen warm.
+
+---
+
+## For the kid in Mumbai
+
+You have 8 GB of RAM and no GPU. Most AI tools won't even install. Here's what happens when you run `superc chat --network`:
+
+1. SuperC loads the shared layers into your 8 GB. It fits.
+2. You type a question. The model activates 8 experts per layer per token.
+3. If an expert is in your disk cache, it runs locally. Fast.
+4. If it's not cached, SuperC asks the Sawyer network. A node in Dallas or Frankfurt or Tokyo runs it and sends the result back. Takes ~100ms.
+5. You see the answer. Same quality as running on a data center. Your machine did the easy part. The network did the hard part.
+6. If you ever get a GPU, you switch from spending tokens to earning them. Same software. Just run `superc serve` instead of `superc chat`.
 
 ---
 
@@ -138,15 +153,17 @@ A kid with a 1060 can't afford tokens. But they can earn them. That's the point.
 | Tier | Price | Tokens | Best For |
 |------|-------|--------|----------|
 | Explorer | Free (14 days) | Unlimited | Try it out |
-| Pro | $15/mo | 2M tokens | Development, daily use |
-| Pioneer | $40/mo | 5M tokens | Scale, growing teams |
-| Enterprise | $200/mo | 10M tokens | Teams, custom deployment |
+| Pro | $15/mo | 2M tokens | Daily use |
+| Pioneer | $40/mo | 5M tokens | Growing teams |
+| Enterprise | $200/mo | 10M tokens | Teams, custom setup |
+
+14-day free trial. No credit card. Then pick a plan. Or just serve and earn enough tokens to never pay.
 
 ---
 
-## Connect Other Tools
+## Connect other tools
 
-SuperC exposes an OpenAI-compatible API at `http://localhost:8000/v1`. Anything that talks to OpenAI can talk to SuperC.
+SuperC gives you an OpenAI-compatible API at `http://localhost:8000/v1`. Anything that talks to OpenAI can talk to SuperC.
 
 ```bash
 # Hermes
@@ -160,7 +177,6 @@ OPENAI_API_KEY=superc OPENAI_BASE_URL=http://localhost:8000/v1 claude
 
 ```python
 from openai import OpenAI
-
 client = OpenAI(api_key="superc", base_url="http://localhost:8000/v1")
 response = client.chat.completions.create(
     model="glm-5.2:cloud",
@@ -172,50 +188,29 @@ Works with: Hermes, OpenClaw, Claude Code, Cursor, Continue, Aider, Cline, LangC
 
 ---
 
-## Supported Models
-
-| Model | Params | Experts | Active/Token | Q4 Size | Expert Size | Best For |
-|-------|--------|---------|-------------|---------|-------------|----------|
-| GLM-5.2 | 744B | 21,504 | ~40B | ~370 GB | ~19 MB | Chat, Code, Reasoning |
-| Mixtral 8x7B | 46.7B | 8 | 2 | ~24 GB | ~1.5 GB | Chat, Code |
-| DeepSeek-V2 Lite | 15.7B | 64 | 6 | ~9 GB | ~0.8 GB | Chat |
-| Qwen1.5-MoE | 14.3B | 60 | 4 | ~7 GB | ~0.5 GB | Chat (lightweight) |
-
----
-
 ## Attribution
 
-The local inference engine in SuperC is based on [Colibri](https://github.com/JustVugg/colibri) by Vincenzo/JustVugg, used under the [Apache 2.0 License](LICENSE-COLIBRI). Colibri proved that a 744B MoE model can run on consumer hardware by streaming experts from disk. We're grateful for that work.
-
-Key Colibri techniques used in SuperC:
-- Expert streaming from disk with per-layer LRU cache
-- int8/int4 integer-dot kernels (AVX2 `maddubs`)
-- MLA weight absorption for decode
-- MTP speculative decoding (2.2-2.8 tok/forward with int8 head)
-- DSA sparse attention
-- KV-cache persistence across sessions
-- Grammar-forced speculative drafts
+The local inference engine is based on [Colibri](https://github.com/JustVugg/colibri) by Vincenzo/JustVugg, used under the [Apache 2.0 License](LICENSE-COLIBRI). Colibri proved that a 744B MoE model can run on consumer hardware. We're grateful for that work.
 
 The network routing, token economics, and provider layer are from [Sawyer](https://github.com/drc10101/sawyer-network) by InFill Systems, LLC.
 
 ---
 
-## Building from Source
+## Building from source
 
 ```bash
 git clone https://github.com/drc10101/sawyer-superc.git
 cd sawyer-superc
-make              # Builds the superc binary
-make test         # Runs self-tests
-make install      # Installs to /usr/local/bin
+make
+./superc selftest
 ```
 
-Requires: gcc or clang with OpenMP support, make.
+Requires: gcc or clang with OpenMP, make.
 
 ---
 
 ## License
 
-Apache 2.0. See [LICENSE](LICENSE) for details. The Colibri-derived engine code carries additional attribution in [LICENSE-COLIBRI](LICENSE-COLIBRI).
+Apache 2.0. See [LICENSE](LICENSE) and [LICENSE-COLIBRI](LICENSE-COLIBRI).
 
-Code is free. Earning on the network is free. If you've got a GPU, you've got income.
+Code is free. Earning on the network is free. If you've got hardware, you've got income.
