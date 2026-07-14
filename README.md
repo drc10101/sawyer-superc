@@ -1,4 +1,4 @@
-<div align="center"><img src="assets/sawyer-superc.svg" alt="Sawyer SuperC" width="600"></div>
+<div align="center"><img src="assets/Sawyer_SuperC_Readme_Logo.png" alt="Sawyer SuperC" width="800"></div>
 
 # Sawyer SuperC
 
