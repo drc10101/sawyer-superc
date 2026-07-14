@@ -35,8 +35,8 @@ Your laptop (8GB RAM)
   |      Got it? Use it.
   |      Don't got it? Ask the Sawyer network.
   |                     |
-  |                     +--> Some kid in Mumbai has expert #47
-  |                     +--> A miner in Texas has expert #47
+  |                     +--> A node with expert #47 has it
+  |                     +--> Another node has expert #47 too
   |                     +--> They run it, send it back, you see the answer
   |
   v
