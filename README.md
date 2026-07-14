@@ -135,14 +135,14 @@ No single computer needs to hold the whole model. That's the point.
 
 ---
 
-## For the kid in Mumbai
+## For anyone with 8 GB of RAM
 
-You have 8 GB of RAM and no GPU. Most AI tools won't even install. Here's what happens when you run `superc chat --network`:
+You don't have a GPU. Most AI tools won't even install on your machine. Here's what happens when you run `superc chat --network`:
 
 1. SuperC loads the shared layers into your 8 GB. It fits.
 2. You type a question. The model activates 8 experts per layer per token.
 3. If an expert is in your disk cache, it runs locally. Fast.
-4. If it's not cached, SuperC asks the Sawyer network. A node in Dallas or Frankfurt or Tokyo runs it and sends the result back. Takes ~100ms.
+4. If it's not cached, SuperC asks the Sawyer network. Someone else's GPU runs it and sends the result back. Takes ~100ms.
 5. You see the answer. Same quality as running on a data center. Your machine did the easy part. The network did the hard part.
 6. If you ever get a GPU, you switch from spending tokens to earning them. Same software. Just run `superc serve` instead of `superc chat`.
 
