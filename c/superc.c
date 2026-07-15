@@ -229,12 +229,15 @@ static int cmd_register(int argc, char **argv) {
 }
 
 static int cmd_download(void) {
-    printf("Download: use git lfs or huggingface-cli\n\n");
-    printf("  git lfs install\n");
-    printf("  git clone https://huggingface.co/mateogrgic/GLM-5.2-colibri-int4-with-int8-mtp\n\n");
-    printf("  # Or for smaller models:\n");
-    printf("  git clone https://huggingface.co/mistralai/Mixtral-8x7B-v0.1\n\n");
-    printf("  export COLI_MODEL=/path/to/downloaded/model\n");
+    printf("Download the GLM-5.2 model\n\n");
+    printf("  Fastest -- use our mirror (datacenter speeds, no HF throttling):\n");
+    printf("    git lfs install\n");
+    printf("    git clone https://mirror.infill.systems/GLM-5.2-colibri-int4-with-int8-mtp\n\n");
+    printf("  Alternative -- HuggingFace (may be slow or throttled):\n");
+    printf("    git lfs install\n");
+    printf("    git clone https://huggingface.co/mateogrgic/GLM-5.2-colibri-int4-with-int8-mtp\n\n");
+    printf("  After downloading, set the model path:\n");
+    printf("    export COLI_MODEL=/path/to/GLM-5.2-colibri-int4-with-int8-mtp\n");
     return 0;
 }
 
