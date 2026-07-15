@@ -14,7 +14,7 @@
  */
 
 #include "sawyer_net.h"
-#include "json.h"
+#include "colibri/json.h"
 
 #include <stdio.h>
 #include <stdlib.h>
