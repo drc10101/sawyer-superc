@@ -71,7 +71,7 @@ static int cmd_chat(int argc, char **argv) {
 
     const char *router = getenv("SAWYER_ROUTER");
 
-    printf("Sawyer SuperC v0.1.0\n");
+    printf("Sawyer SuperC v0.2.0\n");
     printf("  Engine:  Colibri GLM-5.2 MoE (int4/int8)\n");
     printf("  Model:   %s\n", model ? model : "auto-detect");
     printf("  Network: %s\n", (use_network && router) ? router : "local-only");
@@ -144,7 +144,7 @@ static int cmd_serve(int argc, char **argv) {
         else if (strncmp(argv[i], "--model=", 8) == 0) model = argv[i] + 8;
     }
 
-    printf("Sawyer SuperC v0.1.0 -- serve mode\n");
+    printf("Sawyer SuperC v0.2.0 -- serve mode\n");
     printf("  Model:   %s\n", model ? model : "auto-detect");
     printf("  Router:  %s\n", router);
 
@@ -203,7 +203,7 @@ static int cmd_bench(void) {
 static int cmd_status(void) {
     const char *router = getenv("SAWYER_ROUTER");
 
-    printf("Sawyer SuperC v0.1.0 status\n\n");
+    printf("Sawyer SuperC v0.2.0 status\n\n");
     printf("  Engine:     Colibri GLM-5.2 MoE (int4/int8)\n");
     printf("  Model:      GLM-5.2 (744B, 21,504 experts)\n");
     printf("  Network:    %s\n", router ? router : "not connected");
@@ -278,7 +278,7 @@ static int cmd_download(void) {
 }
 
 static int cmd_selftest(void) {
-    printf("Sawyer SuperC v0.1.0 self-test\n\n");
+    printf("Sawyer SuperC v0.2.0 self-test\n\n");
 
     /* Check platform */
     printf("  Platform:  ");
