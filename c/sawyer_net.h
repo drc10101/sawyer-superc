@@ -52,7 +52,7 @@ typedef struct {
 } SawyerNet;
 
 /* Forward declaration -- engine state defined in colibri/glm.c */
-typedef struct GlmEngine GlmEngine;
+typedef struct Model Model;
 
 /* Connect to Sawyer router, returns 0 on success */
 int sawyer_connect(SawyerNet *net, const char *router_url, const char *api_key);
@@ -67,7 +67,7 @@ int sawyer_fetch_expert(SawyerNet *net, ExpertRequest *req, ExpertResponse *resp
 int sawyer_register_provider(SawyerNet *net, ProviderInfo *info);
 
 /* Serve experts to the network (blocking loop) */
-int sawyer_serve_loop(GlmEngine *engine);
+int sawyer_serve_loop(Model *model);
 
 /* Check token balance */
 int64_t sawyer_token_balance(SawyerNet *net);

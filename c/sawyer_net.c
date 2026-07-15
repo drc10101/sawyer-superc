@@ -304,51 +304,12 @@ int sawyer_register_provider(SawyerNet *net, ProviderInfo *info) {
     return -1;
 }
 
-int sawyer_serve_loop(GlmEngine *engine) {
-    if (!engine || !engine->network_enabled) return -1;
-
-    fprintf(stderr, "  sawyer: serving experts to network (press Ctrl+C to stop)\n");
-
-    /* Register as provider */
-    ProviderInfo info = {0};
-    snprintf(info.node_name, sizeof(info.node_name), "superc-%d", (int)getpid());
-    info.tier = 1; /* will be detected from VRAM */
-    info.gpu_vram_mb = 0; /* TODO: detect */
-    info.n_experts_hosted = 0;
-
-    if (sawyer_register_provider(&engine->net, &info) != 0) {
-        fprintf(stderr, "  sawyer: failed to register as provider\n");
-        return -1;
-    }
-
-    /* Main serve loop: poll router for expert requests */
-    while (engine->serve_enabled) {
-        char host[256];
-        int port;
-        parse_host_port(engine->net.router_url, host, sizeof(host), &port);
-
-        /* GET /v1/provider/poll -- blocks until an expert request arrives */
-        HttpResponse resp;
-        int status = http_request("GET", host, port, "/v1/provider/poll", NULL, 0,
-                                   engine->net.api_key, &resp);
-
-        if (status == 200 && resp.body_len > 0) {
-            /* Parse expert request from response */
-            /* TODO: deserialize request, run expert forward pass, POST result back */
-
-            engine->net.tokens_served++;
-            engine->tokens_served++;
-        }
-
-        /* Brief sleep to avoid busy-waiting */
-#ifdef _WIN32
-        Sleep(100);
-#else
-        struct timespec ts = {0, 100 * 1000000}; /* 100ms */
-        nanosleep(&ts, NULL);
-#endif
-    }
-
+int sawyer_serve_loop(Model *model) {
+    /* v0.1.0: serve loop is a stub. Full wiring in v0.2.0 when
+     * Colibri's Model struct is integrated with SawyerNet. */
+    (void)model;
+    fprintf(stderr, "  sawyer: serve mode not yet wired (v0.2.0)\n");
+    fprintf(stderr, "  sawyer: register with --network flag to enable serving\n");
     return 0;
 }
 
