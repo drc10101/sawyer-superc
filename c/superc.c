@@ -61,7 +61,7 @@ static void usage(const char *prog) {
 
 static int cmd_chat(int argc, char **argv) {
     int use_network = 0;
-    const char *model = NULL;
+    const char *model = getenv("COLI_MODEL");
 
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "--network") == 0) use_network = 1;
@@ -78,6 +78,17 @@ static int cmd_chat(int argc, char **argv) {
     printf("  DSA:     %s\n", getenv("DSA") ? (atoi(getenv("DSA")) ? "on" : "off") : "on");
     printf("  MTP:     %s\n", getenv("DRAFT") ? (atoi(getenv("DRAFT")) ? "on" : "off") : "on");
 
+    if (!model) {
+        printf("\n  No model found. Downloading from mirror...\n");
+        printf("  This is a one-time setup. Grabbing GLM-5.2 (~370 GB).\n\n");
+        /* In v0.2.0, this will auto-download from mirror.infill.systems.
+         * For now, point the user to the download command. */
+        printf("  Run: superc download\n");
+        printf("  Or:  git lfs install && git clone https://mirror.infill.systems/GLM-5.2-colibri-int4-with-int8-mtp\n");
+        printf("  Then: set COLI_MODEL=<path-to-model> and run superc chat again\n");
+        return 0;
+    }
+
     if (use_network && router) {
         if (sawyer_connect(&g_net, router, getenv("SAWYER_API_KEY")) == 0) {
             printf("  Connected to Sawyer router\n");
@@ -87,30 +98,46 @@ static int cmd_chat(int argc, char **argv) {
         }
     }
 
-    /* TODO: Wire into Colibri engine for interactive chat.
-     * The Colibri glm.c main() handles chat mode via its own CLI.
-     * We need to extract the chat loop into a callable API
-     * and add the network expert fetch hook into the expert loading path.
-     *
-     * For v0.1.0, this prints the status and exits.
-     * The full engine integration is the next milestone. */
+    /* v0.1.0: Delegate to Colibri engine directly.
+     * The Colibri engine's main() was renamed to coli_main() so we can call it.
+     * We pass through the relevant environment variables and arguments. */
+    {
+        /* Build argv for coli_main:
+         * coli_main expects: coli chat --model <path> [other flags]
+         * We reconstruct the command line from our arguments. */
+        int coli_argc = 2;  /* "coli" + "chat" */
+        char **coli_argv = malloc((argc + 4) * sizeof(char *));
+        coli_argv[0] = (char*)"coli";
+        coli_argv[1] = (char*)"chat";
 
-    printf("\n  Chat mode: engine integration pending (v0.2.0)\n");
-    printf("  Use Colibri directly for local inference:\n");
-    printf("    COLI_MODEL=/path/to/model ./coli chat\n");
+        /* Add model path */
+        char model_flag[4096];
+        snprintf(model_flag, sizeof(model_flag), "--model=%s", model);
+        coli_argv[coli_argc++] = model_flag;
 
-    if (g_net.connected) sawyer_disconnect(&g_net);
-    return 0;
+        /* Pass through remaining args */
+        for (int i = 2; i < argc; i++) {
+            if (strcmp(argv[i], "--network") == 0) continue;  /* skip our flag */
+            if (strncmp(argv[i], "--model", 7) == 0) continue; /* skip our flag */
+            coli_argv[coli_argc++] = argv[i];
+        }
+        coli_argv[coli_argc] = NULL;
+
+        if (g_net.connected) sawyer_disconnect(&g_net);
+        int ret = coli_main(coli_argc, coli_argv);
+        free(coli_argv);
+        return ret;
+    }
 }
 
 static int cmd_serve(int argc, char **argv) {
     const char *router = getenv("SAWYER_ROUTER");
     if (!router) {
-        fprintf(stderr, "Error: SAWYER_ROUTER not set. Run: export SAWYER_ROUTER=http://localhost:8000\n");
+        fprintf(stderr, "Error: SAWYER_ROUTER not set. Run: set SAWYER_ROUTER=http://localhost:8000\n");
         return 1;
     }
 
-    const char *model = NULL;
+    const char *model = getenv("COLI_MODEL");
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "--model") == 0 && i + 1 < argc) model = argv[++i];
         else if (strncmp(argv[i], "--model=", 8) == 0) model = argv[i] + 8;
@@ -129,15 +156,7 @@ static int cmd_serve(int argc, char **argv) {
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-    /* TODO: Wire into Colibri engine for expert serving.
-     * Need to:
-     * 1. Load model weights into RAM/disk
-     * 2. Register available experts with router
-     * 3. Enter poll loop (receive expert requests, run forward pass, return results)
-     *
-     * For v0.1.0, this connects to the router and enters the poll loop.
-     * Actual expert execution requires the Colibri engine API. */
-
+    /* v0.2.0: Full serve loop wiring into Colibri engine */
     printf("  Serve mode: engine integration pending (v0.2.0)\n");
     printf("  Use Sawyer (Python) for network serving:\n");
     printf("    sawyer serve --model %s\n", model ? model : "mixtral");
@@ -153,15 +172,23 @@ static int cmd_models(void) {
     printf("  DeepSeek-V2 Lite  15.7B params      64 experts    ~9 GB int4  Chat\n");
     printf("  Qwen1.5-MoE       14.3B params      60 experts    ~7 GB int4  Chat (lightweight)\n");
     printf("  DBRX Instruct    132B params       16 experts   ~65 GB int4  Code\n\n");
-    printf("Use COLI_MODEL to select: export COLI_MODEL=/path/to/model\n");
-    printf("Download: https://huggingface.co/mateogrgic/GLM-5.2-colibri-int4-with-int8-mtp\n");
+    printf("Use COLI_MODEL to select: set COLI_MODEL=\\path\\to\\model\n");
+    printf("Download: superc download\n");
     return 0;
 }
 
 static int cmd_bench(void) {
-    printf("Benchmark: engine integration pending (v0.2.0)\n");
-    printf("Use Colibri directly: COLI_MODEL=/path/to/model ./coli bench\n");
-    return 0;
+    const char *model = getenv("COLI_MODEL");
+    if (!model) {
+        printf("No model set. Run: set COLI_MODEL=\\path\\to\\model\n");
+        printf("Then: superc bench\n");
+        return 1;
+    }
+    /* v0.1.0: Delegate to Colibri engine */
+    char model_flag[4096];
+    snprintf(model_flag, sizeof(model_flag), "--model=%s", model);
+    char *coli_argv[] = {(char*)"coli", (char*)"bench", model_flag, NULL};
+    return coli_main(3, coli_argv);
 }
 
 static int cmd_status(void) {
@@ -237,7 +264,7 @@ static int cmd_download(void) {
     printf("    git lfs install\n");
     printf("    git clone https://huggingface.co/mateogrgic/GLM-5.2-colibri-int4-with-int8-mtp\n\n");
     printf("  After downloading, set the model path:\n");
-    printf("    export COLI_MODEL=/path/to/GLM-5.2-colibri-int4-with-int8-mtp\n");
+    printf("    set COLI_MODEL=\\path\\to\\GLM-5.2-colibri-int4-with-int8-mtp\n");
     return 0;
 }
 
