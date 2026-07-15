@@ -62,6 +62,20 @@ chmod +x superc
 irm https://github.com/drc10101/sawyer-superc/releases/latest/download/superc-windows-x64.exe -OutFile superc.exe
 ```
 
+Then download the model:
+
+```bash
+# Fastest: our mirror (datacenter speeds, no HF throttling)
+git lfs install
+git clone https://mirror.infill.systems/GLM-5.2-colibri-int4-with-int8-mtp
+export COLI_MODEL=./GLM-5.2-colibri-int4-with-int8-mtp
+
+# Alternative: HuggingFace (may be slow or throttled)
+git lfs install
+git clone https://huggingface.co/mateogrgic/GLM-5.2-colibri-int4-with-int8-mtp
+export COLI_MODEL=./GLM-5.2-colibri-int4-with-int8-mtp
+```
+
 Then:
 
 ```bash
