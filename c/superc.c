@@ -32,7 +32,7 @@ static void signal_handler(int sig) {
 static SawyerNet g_net = {0};
 
 static void usage(const char *prog) {
-    printf("Sawyer SuperC v0.1.0 -- Native MoE inference + Sawyer network\n");
+    printf("Sawyer SuperC v0.2.0 -- Native MoE inference + Sawyer network\n");
     printf("Engine based on Colibri by Vincenzo/JustVugg (Apache 2.0)\n");
     printf("Model: GLM-5.2 by Z.ai (open weights)\n\n");
     printf("8GB of RAM. A 744-billion-parameter model. For real.\n\n");
