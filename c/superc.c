@@ -98,34 +98,35 @@ static int cmd_chat(int argc, char **argv) {
         }
     }
 
-    /* v0.1.0: Delegate to Colibri engine directly.
-     * The Colibri engine's main() was renamed to coli_main() so we can call it.
-     * We pass through the relevant environment variables and arguments. */
+    /* v0.2.0: Wire into Colibri engine via SNAP env var + SERVE=1 for interactive chat.
+     * Colibri's main() reads SNAP=<dir> for the model path and SERVE=1 for chat mode.
+     * We set these env vars and call coli_main with positional args (cap ebits dbits). */
     {
-        /* Build argv for coli_main:
-         * coli_main expects: coli chat --model <path> [other flags]
-         * We reconstruct the command line from our arguments. */
-        int coli_argc = 2;  /* "coli" + "chat" */
-        char **coli_argv = malloc((argc + 4) * sizeof(char *));
-        coli_argv[0] = (char*)"coli";
-        coli_argv[1] = (char*)"chat";
+        /* Set SNAP so Colibri finds the model */
+        setenv("SNAP", model, 1);
 
-        /* Add model path */
-        char model_flag[4096];
-        snprintf(model_flag, sizeof(model_flag), "--model=%s", model);
-        coli_argv[coli_argc++] = model_flag;
+        /* Set SERVE=1 for interactive chat mode (persistent KV, streaming output) */
+        setenv("SERVE", "1", 1);
 
-        /* Pass through remaining args */
-        for (int i = 2; i < argc; i++) {
-            if (strcmp(argv[i], "--network") == 0) continue;  /* skip our flag */
-            if (strncmp(argv[i], "--model", 7) == 0) continue; /* skip our flag */
-            coli_argv[coli_argc++] = argv[i];
-        }
-        coli_argv[coli_argc] = NULL;
+        /* Disable OMP re-exec — superc.c already owns main(), we don't want
+         * coli_main to re-exec itself and lose our Sawyer network context */
+        setenv("COLI_OMP_TUNED", "1", 1);
+
+        /* coli_main expects positional args: <capacity> [<expert_bits> [<dense_bits>]]
+         * Default: cap=64 (expert cache size), bits=auto from model config */
+        char cap_str[16];
+        snprintf(cap_str, sizeof(cap_str), "%d", 64);  /* default cache capacity */
+
+        /* Allow user to override via COLI_RAM / expert_bits env vars */
+        char *coli_argv[] = {(char*)"coli", cap_str, NULL};
+        int coli_argc = 2;
 
         if (g_net.connected) sawyer_disconnect(&g_net);
         int ret = coli_main(coli_argc, coli_argv);
-        free(coli_argv);
+
+        /* Clean up env vars we set */
+        unsetenv("SNAP");
+        unsetenv("SERVE");
         return ret;
     }
 }
@@ -184,11 +185,19 @@ static int cmd_bench(void) {
         printf("Then: superc bench\n");
         return 1;
     }
-    /* v0.1.0: Delegate to Colibri engine */
-    char model_flag[4096];
-    snprintf(model_flag, sizeof(model_flag), "--model=%s", model);
-    char *coli_argv[] = {(char*)"coli", (char*)"bench", model_flag, NULL};
-    return coli_main(3, coli_argv);
+    /* Set SNAP and run Colibri with PROMPT for one-shot benchmark */
+    setenv("SNAP", model, 1);
+    setenv("COLI_OMP_TUNED", "1", 1);
+    setenv("PROMPT", "The quick brown fox jumps over the lazy dog.", 1);
+    setenv("NGEN", "64", 1);
+    char cap_str[16];
+    snprintf(cap_str, sizeof(cap_str), "%d", 64);
+    char *coli_argv[] = {(char*)"coli", cap_str, NULL};
+    int ret = coli_main(2, coli_argv);
+    unsetenv("SNAP");
+    unsetenv("PROMPT");
+    unsetenv("NGEN");
+    return ret;
 }
 
 static int cmd_status(void) {
